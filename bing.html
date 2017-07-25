@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"><!--防止IE进入怪异浏览模式-->
+    <title>bing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            background-color: #333;
+        }
+
+        .bg-pic {
+            background-image: url("LagazuoiRefuge_ZH-CN12532053341_1920x1080.jpg");
+            /*background-repeat: no-repeat;*/
+            background-position: center;
+            background-size: cover;
+            background-attachment: fixed;
+            height: 880px;
+            /*width: 2400px;*/
+            /*transition: opacity 0.5s ease-in ;*/
+        }
+
+        .logo {
+            background-image: url("hp_zh_cn.png");
+            background-repeat: no-repeat;
+            height: 53px;
+            width: 107px;
+            float: left;
+        }
+
+        #form {
+            height: 53px;
+            float: left;
+            line-height: 53px;
+            margin-left: 10px;
+            /*border: white solid 1px;*/
+        }
+
+        #form .search-text {
+            outline: none;
+            width: 500px;
+            height: 40px;
+            float: left;
+            border: #fff 2px solid;
+        }
+
+        #form .search-button {
+            /*background-color: #007daa;*/
+            height: 45px;
+            width: 45px;
+            float: left;
+            background: #007daa url('hpc20.png') no-repeat;
+            background-position: -169px -63px;
+            border: 8px solid #007daa;
+        }
+
+        .search-box {
+            position: absolute;
+            top: 300px;
+            left: 200px;
+            width: 800px;
+            height: 53px;
+            /*border: white 1px solid;*/
+        }
+
+        .bg-wrap {
+            height: 100%;
+            width: 100%;
+            background: black;
+            opacity: 0;
+        }
+
+        .bg-wrap-trans {
+            opacity: 0.5;
+            transition: opacity ease-in 0.2s;
+        }
+
+        #suggest-list {
+            /*position: absolute;*/
+            /*top: 343px;*/
+            /*left: 317px;*/
+            width: 549px;
+            background: #fff;
+            display: none;
+        }
+
+        #suggest-list ul {
+            list-style: none;
+            line-height: 25px;
+        }
+
+        #suggest-list ul li:hover {
+            cursor: pointer;
+            text-decoration: underline;
+            background-color: #ccc;
+        }
+    </style>
+    <!--JQ实现-->
+    <!--<script src="jquery-3.2.1.min.js"></script>
+    <script>
+        $(window).ready(function () {
+            $('#form').on('click', function (event) {
+                event.stopPropagation();
+                $('.bg-wrap').css({
+                    'opacity': '0.5',
+                    'transition': 'opacity  0.2s ease-in'
+                })
+            });
+            $('body').on('click', function () {
+                $('.bg-wrap').css({
+                    'opacity': '0',
+                    'transition': 'opacity  0.2s ease-in'
+                });
+                $('#suggest-list').hide();
+            });
+            $('#form').on('keyup', function () {
+                var sl_top = $('#form').offset().top + $('#form .search-text').height();
+                var sl_left = $('#form').offset().left;
+                var searchText = $('#form .search-text').val();
+//                alert(searchText);
+//                alert(sl_top);
+                $.get("http://api.bing.com/qsonhs.aspx?type=cb&q=" + searchText, function (d) {
+                    var data = d.AS.Results[0].Suggests;
+                    $('#suggest-list .suggest-list-res li').remove();
+                    for (var i = 0; i < data.length; i++) {
+                        $('#suggest-list .suggest-list-res').append($('<li><a style="text-decoration: none; color: black;display: block;width: 100%" href=' + data[i].Url + '>' + data[i].Txt + '</a></li>'));
+                    }
+                }, 'json');
+                $('#suggest-list').css({
+                    'position': 'absolute',
+                    'top': sl_top,
+                    'left': sl_left,
+                    'display': 'block'
+                });
+            });
+        })
+    </script>-->
+
+    <!--JQ   approach -->
+    <script>
+        window.onload = function () {
+            wrap = getByClass('bg-wrap')[0];
+            var form = getById('form');
+            var form_text = getByClass('search-text', 'form')[0];
+            var submit_item=getByClass('search-button','form')[0];
+            var suggestion_list = getById('suggest-list');
+            var searchbox = getByClass('search-box')[0];
+            // darken the background
+            form.onclick = function (event) {
+                event.stopPropagation();
+                wrap.className += ' bg-wrap-trans';
+            };
+            // light the background& close suggestion list
+            document.onclick = function () {
+                wrap.className = 'bg-wrap';
+                suggestion_list.style.display = 'none';
+            };
+            // open suggestion list
+            form_text.onkeyup = function (e) {
+                e.preventDefault();
+                var top = form_text.offsetHeight + searchbox.offsetTop;
+                var left = form_text.offsetLeft + searchbox.offsetLeft;
+                suggestion_list.style.position = 'absolute';
+                suggestion_list.style.left = left + 'px';
+                suggestion_list.style.top = top + 'px';
+                suggestion_list.style.display = 'block';
+                getList(form_text.value);
+                if (e.keyCode == 13) {
+                    location.href = 'http://cn.bing.com/search?q=' + form_text.value;
+                }
+            };
+
+            // AJAX to get data
+            function getList(word) {
+                var request = null;
+                if (window.XMLHttpRequest) {
+                    request = new XMLHttpRequest();
+                } else if (window.ActiveXObject) {
+                    request = new ActiveXObject("Msxml2.XMLHTTP");
+                }
+                request.open('get', 'http://api.bing.com/qsonhs.aspx?type=cb&q=' + word, true);
+                request.send(null);
+                request.onreadystatechange = function () {
+                    if (request.readyState == 4) {
+                        if (request.status == 200) {
+                            var list = getByClass('suggest-list-res')[0];
+                            /*list.addEventListener('click',function (e) {
+                                if(e.target&&e.target.nodeName.toUpperCase()=='LI'){
+                                   location.href='http://cn.bing.com/search?q='+this.innerHTML;
+                                }
+                            });*/
+//                            alert(list.firstChild+' vs '+list.childNodes[0]);
+                            while (list.hasChildNodes()) {
+                                list.removeChild(list.childNodes[0]);// delete old list
+                            }
+                            var result = JSON.parse(request.responseText).AS.Results[0].Suggests;
+                            for (var i = 0; i < result.length; i++) {
+                                var item = document.createElement('li');
+//                                var a=document.createElement('a');
+//                                a.style.cssText={
+//                                  'text-decoration':'none',
+//                                  'color':'black'
+//                                };
+//                                a.innerHTML = result[i].Txt;
+//                                list.appendChild(item.appendChild(a));
+                                item.innerHTML = result[i].Txt;
+                                item.addEventListener('click', function () {
+                                    location.href = 'http://cn.bing.com/search?q=' + this.innerHTML;
+                                });
+                                list.appendChild(item);
+                            }
+                        }
+                    } else {
+                        return 'error';
+                    }
+                }
+            }
+
+            // js method for getting element by id
+            function getById(id) {
+                return document.getElementById(id) || document;
+            };
+
+            // js method for getting elements by class name
+            function getByClass(cls, parentId) {
+                var parent = (parentId) ? getById(parentId) : document;
+                var children = parent.getElementsByTagName('*');
+                var result = [];
+                for (var i = 0; i < children.length; i++) {
+                    if (children[i].className.match(new RegExp("(//s|^)" + cls + "(//s|$)"))) {
+                        result.push(children[i]);
+                    }
+                }
+                return result;
+            }
+        }
+
+    </script>
+</head>
+<body>
+<div class="bg-pic">
+    <div class="bg-wrap"></div>
+</div>
+<div class="search-box">
+    <div class="logo"></div>
+    <form id="form">
+        <input type="text" class="search-text">
+        <input type="submit" class="search-button" value="">
+    </form>
+</div>
+<div id="suggest-list">
+    <ul class="suggest-list-res">
+    </ul>
+</div>
+</body>
+</html>
